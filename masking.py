@@ -15,6 +15,7 @@ class AttachMaskAsAlphaChannel:
         }
 
     RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("IMAGE",)
     FUNCTION = "attach_mask"
     CATEGORY = "image"
 

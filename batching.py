@@ -19,6 +19,7 @@ class PaddedBatchImages:
         }
 
     RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("IMAGE",)
     FUNCTION = "batch_images"
     CATEGORY = "image"
 
