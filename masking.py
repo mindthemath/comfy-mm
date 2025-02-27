@@ -1,7 +1,7 @@
 import torch
 
 
-class AttachMaskAsAlphaChannel:
+class AttachMaskAsAlphaChannel:  # custom version of JoinImageWithAlpha
     @classmethod
     def INPUT_TYPES(cls):
         return {
