@@ -141,9 +141,8 @@ class GridPreviewWidth:
     CATEGORY = "image"
     FUNCTION = "render_preview"
 
-    def render_preview(self, grid_data, aspect_ratio, ppi, inches):
+    def render_preview(self, grid_data, aspect_ratio, target_width):
         # Calculate output dimensions
-        target_width = int(ppi * inches)
         target_height = int(target_width / aspect_ratio)
 
         # Create output image

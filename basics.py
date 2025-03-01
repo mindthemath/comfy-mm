@@ -43,18 +43,19 @@ class ListSubsetNode:
                 "indices": (
                     "STRING",
                     {"default": "-1", "multiline": True},
-                ),  # Comma-separated list of indices
+                ),
+                "offset": ("INT", {"default": 0}),
             }
         }
 
     RETURN_TYPES = ("LIST",)
     FUNCTION = "subset_list"
 
-    def subset_list(self, input_list: list, indices: str):
+    def subset_list(self, input_list: list, indices: str, offset: int) -> Tuple[list]:
         # Parse the indices string into a list of integers
         try:
             index_list = [
-                int(i.strip())
+                int(i.strip()) + offset
                 for i in indices.split(",")
                 if i.strip().isdigit() or i.strip() == "-1"
             ]
