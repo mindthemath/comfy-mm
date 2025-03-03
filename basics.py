@@ -19,8 +19,8 @@ class GetDimensions:
     def extract_shape(self, image: torch.Tensor) -> Tuple[int, int, int, int]:
         shape = image.shape
 
-        if len(shape) == 4:  # (B, C, H, W)
-            batch, channels, rows, cols = shape
+        if len(shape) == 4:  # (B, H, W, C)
+            batch, rows, cols, channels = shape
         elif len(shape) == 3:  # (C, H, W) -> Assume batch of 1
             batch, rows, cols, channels = 1, shape[1], shape[2], shape[0]
         elif len(shape) == 2:  # (H, W) -> Grayscale image, assume single-channel

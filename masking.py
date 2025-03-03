@@ -45,9 +45,7 @@ class AttachMaskAsAlphaChannel:  # custom version of JoinImageWithAlpha
         # Ensure image has 3 channels
         B, H, W, C = image.shape
         if C != 3:
-            raise ValueError(
-                f"Input image must have exactly 3 channels (RGB). Got {C}."
-            )
+            image = image[..., :3]
 
         # Ensure mask has shape (B, H, W)
         if mask.ndim != 3:
@@ -111,12 +109,17 @@ class AddImagesWithAlpha:
         (torch.Tensor,)
             A single-element tuple containing the blended image: shape (B, H, W, 3).
         """
-        # Ensure images have 3 channels
-        B, H, W, C = image1.shape
-        if C != 4:
-            raise ValueError(
-                f"Input images must have exactly 4 channels (RGBA). Got {C}."
-            )
+        # ensure batch dimension
+        if image1.ndim != 4:
+            image1 = image1.unsqueeze(0)
+        if image2.ndim != 4:
+            image2 = image2.unsqueeze(0)
+        # ensure alpha channels exist:
+        if image1.shape[-1] == 3:
+            image1 = torch.cat([image1, torch.ones_like(image1[..., :1])], dim=-1)
+        if image2.shape[-1] == 3:
+            image2 = torch.cat([image2, torch.ones_like(image2[..., :1])], dim=-1)
+        # Ensure images have the same dimensions
         if image2.shape != image1.shape:
             raise ValueError(
                 f"Input images must have the same shape. Got {image1.shape} and {image2.shape}."
