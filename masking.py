@@ -148,6 +148,7 @@ class UnifyMask:
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "unify_masks"
+    CATEGORY = "masking"
 
     def unify_masks(self, masks: torch.Tensor) -> Tuple[torch.Tensor]:
         """
@@ -172,8 +173,56 @@ class UnifyMask:
 
         # Create a unique integer mask for each batch dimension
         B, H, W = masks.shape
-        unified_mask = torch.zeros_like(masks, dtype=torch.int32)
+        unified_mask = torch.zeros_like(masks[0], dtype=torch.uint8)
         for i in range(B):
-            unified_mask[i] = i + 1
+            unified_mask[masks[i] > 0] = i + 1
 
         return (unified_mask,)
+
+
+class SaveMaskAsCSV:
+    """
+    Takes a mask (without a batch dimension) and saves it as a CSV file (no header)
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mask": ("MASK", {}),
+                "filename": ("STRING", {"default": "mask.csv"}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "save_mask_as_csv"
+    CATEGORY = "masking"
+    OUTPUT_NODE = True
+
+    def save_mask_as_csv(self, mask: torch.Tensor, filename: str) -> Tuple[str]:
+        """
+        Takes a mask (without a batch dimension) and saves it as a CSV file (no header).
+
+        Parameters:
+        -----------
+        mask : torch.Tensor
+            Shape (H, W). Values usually in [0, 1].
+        filename : str
+            The name of the CSV file to save.
+
+        Returns:
+        --------
+        (str,)
+            A single-element tuple containing the filename of the saved CSV.
+        """
+        # Ensure mask has shape (H, W)
+        if mask.ndim != 2:
+            raise ValueError(f"Mask must have 2 dimensions (H, W). Got {mask.shape}.")
+
+        # Save the mask as a CSV file
+        mask_np = mask.cpu().numpy()
+        with open(filename, "w") as f:
+            for row in mask_np:
+                f.write(",".join(map(str, row)) + "\n")
+
+        return (filename,)

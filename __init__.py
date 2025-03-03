@@ -1,7 +1,12 @@
 from .basics import GetDimensions, ListSubsetNode
 from .batching import PaddedBatchImages
 from .grid_sampler import GridPreview, GridPreviewWidth, GridSampler
-from .masking import AddImagesWithAlpha, AttachMaskAsAlphaChannel, UnifyMask
+from .masking import (
+    AddImagesWithAlpha,
+    AttachMaskAsAlphaChannel,
+    UnifyMask,
+    SaveMaskAsCSV,
+)
 
 # Register Nodes
 NODE_CLASS_MAPPINGS = {
@@ -14,6 +19,7 @@ NODE_CLASS_MAPPINGS = {
     "GridPreviewWidth": GridPreviewWidth,
     "AddImagesWithAlpha": AddImagesWithAlpha,
     "UnifyMask": UnifyMask,
+    "SaveMaskAsCSV": SaveMaskAsCSV,
 }
 # Configure Names (e.g., for Search)
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -26,6 +32,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "GridPreviewWidth": "GridPreviewWidth",
     "AddImagesWithAlpha": "AddImagesWithAlpha",
     "UnifyMask": "UnifyMask",
+    "SaveMaskAsCSV": "SaveMaskAsCSV",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
