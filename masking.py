@@ -190,7 +190,7 @@ class SaveMaskAsCSV:
         return {
             "required": {
                 "mask": ("MASK", {}),
-                "filename": ("STRING", {"default": "mask.csv"}),
+                "filename": ("STRING", {"default": "output/mask.csv"}),
             }
         }
 

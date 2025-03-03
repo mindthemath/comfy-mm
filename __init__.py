@@ -4,8 +4,8 @@ from .grid_sampler import GridPreview, GridPreviewWidth, GridSampler
 from .masking import (
     AddImagesWithAlpha,
     AttachMaskAsAlphaChannel,
-    UnifyMask,
     SaveMaskAsCSV,
+    UnifyMask,
 )
 
 # Register Nodes
