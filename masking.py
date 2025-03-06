@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import numpy as np
 import torch
 
 
@@ -280,3 +281,118 @@ class LoadMaskFromCSV:
         for i in range(num_layers):
             final_mask[i] = (mask == i + 1).int()
         return (final_mask,)
+
+
+class GetStatisticsForMasks:
+    """
+    Given a collection of masks (B, R, C), computes a summary statistics table.
+    Information included:
+    - average R, G, and B values
+    - size of masks
+
+    In case of alpha channel present in image, or mask being partially transparent,
+    the RGB values are averaged over the non-transparent region, weighted by alpha in both.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "masks": ("MASK", {}),  # shape: (B, H, W), in (0,1)
+                "image": (
+                    "IMAGE",
+                    {},
+                ),  # shape: (B, H, W, C) - could be 3 or 4 color channels, in (0,1)
+            }
+        }
+
+    RETURN_TYPES = ("NUMPY",)
+    RETURN_NAMES = ("STATS",)
+    FUNCTION = "get_statistics_for_masks"
+    CATEGORY = "masking"
+
+    def normalize_shapes(self, mask, image):
+        if image.ndim == 3:
+            image = image.unsqueeze(0)
+        if image.shape[-1] == 3:
+            image = torch.cat([image, torch.ones_like(image[..., :1])], dim=-1)
+        if mask.ndim == 2:
+            mask = mask.unsqueeze(0)
+        return (mask, image)
+
+    def get_statistics_for_masks(
+        self, masks: torch.Tensor, image: torch.Tensor
+    ) -> Tuple[np.ndarray]:
+        masks, image = self.normalize_shapes(masks, image)
+        # Get mask size
+        mask_sizes = masks.sum(dim=(1, 2)).cpu().numpy()  # (B,)
+        # Get average RGB values. mask is of shape (B, H, W), image is of shape (B, H, W, C)
+        # get masked region
+        # Convert image to (B, C, H, W) format
+        image_permuted = image.permute(0, 3, 1, 2)  # (B, C, H, W)
+
+        # Expand masks to match color channels
+        masks_expanded = masks.unsqueeze(1).expand(-1, 4, -1, -1)  # (B, C, H, W)
+        masked_rgb = masks_expanded * image_permuted
+        masked_rgb_final = masked_rgb.permute(0, 2, 3, 1)  # (B, H, W, C)
+        # Get average RGB values
+        masked_rgb_sum = masked_rgb_final.sum(dim=(1, 2))  # (B, C)
+        mask_sizes = mask_sizes.reshape(-1, 1)
+        masked_rgb_mean = masked_rgb_sum / mask_sizes
+        # compute aspect ratio of bounding box for each mask's nonzero region
+        aspect_ratios = []
+        for m in masks:
+            # get bounding box for each mask
+            # make m 2D
+            m = m.squeeze(0)
+            mask_indices = torch.nonzero(m, as_tuple=False)
+            min_y, min_x = mask_indices.min(dim=0)[0]
+            max_y, max_x = mask_indices.max(dim=0)[0]
+            aspect_ = (max_x - min_x) / (max_y - min_y)
+            aspect_ratios.append(aspect_)
+        aspect_ratios = np.array(aspect_ratios).reshape(-1, 1)
+
+        stats = np.concatenate(
+            [masked_rgb_mean.cpu().numpy(), mask_sizes, aspect_ratios], axis=1
+        )
+
+        return (stats,)
+
+
+class FillMasksWithColor:
+    """
+    Given the stats (RGB are first three columns), and masks (B, H, W),
+    fills the masks with the RGB values from the stats.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "stats": ("NUMPY", {}),
+                "masks": ("MASK", {}),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("IMAGE",)
+    FUNCTION = "fill_masks_with_color"
+    CATEGORY = "masking"
+
+    def fill_masks_with_color(
+        self, stats: np.ndarray, masks: torch.Tensor
+    ) -> Tuple[torch.Tensor]:
+        # Get RGB values from stats
+        rgb_values = stats[:, :3]
+        B, H, W = masks.shape
+        image = torch.zeros(1, H, W, 3)
+        for i in range(B):
+            # Get RGB values for mask i
+            rgb = rgb_values[i]
+            # convert to torch
+            rgb = torch.tensor(rgb, dtype=torch.float32)
+            # Fill mask with color where mask is nonzero
+            image[0, :, :, :3][
+                masks[i] > 0
+            ] = rgb  # final masks in list are last to paint
+        return (image,)

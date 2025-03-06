@@ -4,6 +4,8 @@ from .grid_sampler import GridPreview, GridPreviewWidth, GridSampler
 from .masking import (
     AddImagesWithAlpha,
     AttachMaskAsAlphaChannel,
+    FillMasksWithColor,
+    GetStatisticsForMasks,
     LoadMaskFromCSV,
     SaveMaskAsCSV,
     UnifyMask,
@@ -22,6 +24,8 @@ NODE_CLASS_MAPPINGS = {
     "UnifyMask": UnifyMask,
     "SaveMaskAsCSV": SaveMaskAsCSV,
     "LoadMaskFromCSV": LoadMaskFromCSV,
+    "GetStatisticsForMasks": GetStatisticsForMasks,
+    "FillMasksWithColor": FillMasksWithColor,
 }
 # Configure Names (e.g., for Search)
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -36,6 +40,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "UnifyMask": "UnifyMask",
     "SaveMaskAsCSV": "SaveMaskAsCSV",
     "LoadMaskFromCSV": "LoadMaskFromCSV",
+    "GetStatisticsForMasks": "GetStatisticsForMasks",
+    "FillMasksWithColor": "FillMasksWithColor",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
