@@ -125,9 +125,12 @@ class AddImagesWithAlpha:
                 f"Input images must have the same shape. Got {image1.shape} and {image2.shape}."
             )
 
-        # Optionally clamp alpha values
+        # clamp alpha values
         alpha1 = max(0.0, min(1.0, alpha1))
         alpha2 = max(0.0, min(1.0, alpha2))
+
+        # deal with mask overlaps (avoid clipping)
+        image2[..., 3] -= torch.bitwise_and(image1[..., 3].int(), image2[..., 3].int())
 
         # Blend the images
         # mask pixels by alpha channel before adding.
@@ -229,3 +232,51 @@ class SaveMaskAsCSV:
                 f.write(",".join(map(str, row)) + "\n")
 
         return (filename,)
+
+
+class LoadMaskFromCSV:
+    """
+    Loads a mask from a CSV file (no header) and returns it as a tensor
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "filename": ("STRING", {"default": "output/mask.csv"}),
+            }
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "load_mask_from_csv"
+    CATEGORY = "masking"
+
+    def load_mask_from_csv(self, filename: str) -> Tuple[torch.Tensor]:
+        """
+        Loads a mask from a CSV file (no header) and returns it as a tensor.
+
+        Parameters:
+        -----------
+        filename : str
+            The name of the CSV file to load.
+
+        Returns:
+        --------
+        (torch.Tensor,)
+            A single-element tuple containing the loaded mask: shape (H, W).
+        """
+        # Load the mask from the CSV file
+        with open(filename, "r") as f:
+            mask = []
+            for line in f:
+                mask.append(list(map(float, line.strip().split(","))))
+            mask = torch.tensor(mask, dtype=torch.uint8)
+
+        # now create a binary mask in each batch dimension, undoing the UnifyMask operation
+        num_layers = int(mask.max().item())
+        final_mask = torch.zeros(
+            num_layers, mask.shape[0], mask.shape[1], dtype=torch.uint8
+        )
+        for i in range(num_layers):
+            final_mask[i] = (mask == i + 1).int()
+        return (final_mask,)
