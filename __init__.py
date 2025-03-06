@@ -1,5 +1,9 @@
 from .basics import GetDimensions, ListSubsetNode
 from .batching import PaddedBatchImages
+from .composite import NODE_CLASS_MAPPINGS as COMPOSITE_NODE_CLASS_MAPPINGS
+from .composite import (
+    NODE_DISPLAY_NAME_MAPPINGS as COMPOSITE_NODE_DISPLAY_NAME_MAPPINGS,
+)
 from .grid_sampler import GridPreview, GridPreviewWidth, GridSampler
 from .masking import (
     AddImagesWithAlpha,
@@ -7,6 +11,7 @@ from .masking import (
     FillMasksWithColor,
     GetStatisticsForMasks,
     LoadMaskFromCSV,
+    QuantizeColors,
     SaveMaskAsCSV,
     UnifyMask,
 )
@@ -26,6 +31,8 @@ NODE_CLASS_MAPPINGS = {
     "LoadMaskFromCSV": LoadMaskFromCSV,
     "GetStatisticsForMasks": GetStatisticsForMasks,
     "FillMasksWithColor": FillMasksWithColor,
+    "QuantizeColors": QuantizeColors,
+    **COMPOSITE_NODE_CLASS_MAPPINGS,
 }
 # Configure Names (e.g., for Search)
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -42,6 +49,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "LoadMaskFromCSV": "LoadMaskFromCSV",
     "GetStatisticsForMasks": "GetStatisticsForMasks",
     "FillMasksWithColor": "FillMasksWithColor",
+    "QuantizeColors": "QuantizeColors",
+    **COMPOSITE_NODE_DISPLAY_NAME_MAPPINGS,
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

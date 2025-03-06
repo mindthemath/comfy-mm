@@ -396,3 +396,36 @@ class FillMasksWithColor:
                 masks[i] > 0
             ] = rgb  # final masks in list are last to paint
         return (image,)
+
+
+class QuantizeColors:
+    """
+    Takes in the stats array, and rounds the first three columns (RGB) to lower the
+    fidelity of the colorspace.
+    Takes as inputs the number of decimal places to round to (default 12), and returns the rounded array.
+    Also returns the count of unique colors
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "stats": ("NUMPY", {}),
+                "decimal_places": ("INT", {"default": 6}),
+            }
+        }
+
+    RETURN_TYPES = ("NUMPY", "INT")
+    RETURN_NAMES = ("QUANTIZED_STATS", "UNIQUE_COLORS")
+    FUNCTION = "quantize_colors"
+    CATEGORY = "masking"
+
+    def quantize_colors(
+        self, stats: np.ndarray, decimal_places: int = 12
+    ) -> Tuple[np.ndarray, int]:
+        # Round the RGB values to the specified number of decimal places
+        stats_quantized = np.copy(stats)
+        stats_quantized[:, :3] = np.round(stats[:, :3], decimal_places)
+        # Get the number of unique colors
+        unique_colors = len(np.unique(stats_quantized[:, :3], axis=0))
+        return (stats_quantized, unique_colors)
