@@ -306,8 +306,8 @@ class GetStatisticsForMasks:
             }
         }
 
-    RETURN_TYPES = ("NUMPY",)
-    RETURN_NAMES = ("STATS",)
+    RETURN_TYPES = ("NUMPY", "NUMPY")
+    RETURN_NAMES = ("COLOR_STATS", "SIZE_STATS")
     FUNCTION = "get_statistics_for_masks"
     CATEGORY = "masking"
 
@@ -322,7 +322,7 @@ class GetStatisticsForMasks:
 
     def get_statistics_for_masks(
         self, masks: torch.Tensor, image: torch.Tensor
-    ) -> Tuple[np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         masks, image = self.normalize_shapes(masks, image)
         # Get mask size
         mask_sizes = masks.sum(dim=(1, 2)).cpu().numpy()  # (B,)
@@ -341,6 +341,8 @@ class GetStatisticsForMasks:
         masked_rgb_mean = masked_rgb_sum / mask_sizes
         # compute aspect ratio of bounding box for each mask's nonzero region
         aspect_ratios = []
+        widths = []
+        heights = []
         for m in masks:
             # get bounding box for each mask
             # make m 2D
@@ -350,13 +352,58 @@ class GetStatisticsForMasks:
             max_y, max_x = mask_indices.max(dim=0)[0]
             aspect_ = (max_x - min_x) / (max_y - min_y)
             aspect_ratios.append(aspect_)
+            widths.append(max_x - min_x)
+            heights.append(max_y - min_y)
         aspect_ratios = np.array(aspect_ratios).reshape(-1, 1)
+        widths = np.array(widths).reshape(-1, 1)
+        heights = np.array(heights).reshape(-1, 1)
 
-        stats = np.concatenate(
-            [masked_rgb_mean.cpu().numpy(), mask_sizes, aspect_ratios], axis=1
+        color_stats = np.concatenate([masked_rgb_mean.cpu().numpy()], axis=1)
+        size_stats = np.concatenate(
+            [widths, heights, mask_sizes, aspect_ratios], axis=1
         )
+        return (color_stats, size_stats)
 
-        return (stats,)
+
+class ConcatenateArrays:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "array_left": ("NUMPY", {}),
+                "array_right": ("NUMPY", {}),
+            },
+            "optional": {
+                "axis": ("INT", {"default": 1}),
+            },
+        }
+
+    CATEGORY = "array"
+    FUNCTION = "concatenate_arrays"
+    RETURN_TYPES = ("NUMPY",)
+    RETURN_NAMES = ("ARRAY",)
+
+    def concatenate_arrays(
+        self, array_left: np.ndarray, array_right: np.ndarray, axis: int = 1
+    ) -> Tuple[np.ndarray]:
+        """
+        Concatenates two numpy arrays along the first axis.
+
+        Parameters:
+        -----------
+        array_left : np.ndarray
+            The left array to concatenate.
+        array_right : np.ndarray
+            The right array to concatenate.
+        axis : int
+            The axis along which to concatenate the arrays.
+
+        Returns:
+        --------
+        (np.ndarray,)
+            A single-element tuple containing the concatenated array.
+        """
+        return (np.concatenate([array_left, array_right], axis=axis),)
 
 
 class FillMasksWithColor:

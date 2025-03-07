@@ -8,6 +8,7 @@ from .grid_sampler import GridPreview, GridPreviewWidth, GridSampler
 from .masking import (
     AddImagesWithAlpha,
     AttachMaskAsAlphaChannel,
+    ConcatenateArrays,
     FillMasksWithColor,
     GetStatisticsForMasks,
     LoadMaskFromCSV,
@@ -32,6 +33,7 @@ NODE_CLASS_MAPPINGS = {
     "GetStatisticsForMasks": GetStatisticsForMasks,
     "FillMasksWithColor": FillMasksWithColor,
     "QuantizeColors": QuantizeColors,
+    "ConcatenateArrays": ConcatenateArrays,
     **COMPOSITE_NODE_CLASS_MAPPINGS,
 }
 # Configure Names (e.g., for Search)
@@ -50,6 +52,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "GetStatisticsForMasks": "GetStatisticsForMasks",
     "FillMasksWithColor": "FillMasksWithColor",
     "QuantizeColors": "QuantizeColors",
+    "ConcatenateArrays": "ConcatenateArrays",
     **COMPOSITE_NODE_DISPLAY_NAME_MAPPINGS,
 }
 
