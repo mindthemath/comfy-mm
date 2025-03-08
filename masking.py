@@ -386,23 +386,6 @@ class ConcatenateArrays:
     def concatenate_arrays(
         self, array_left: np.ndarray, array_right: np.ndarray, axis: int = 1
     ) -> Tuple[np.ndarray]:
-        """
-        Concatenates two numpy arrays along the first axis.
-
-        Parameters:
-        -----------
-        array_left : np.ndarray
-            The left array to concatenate.
-        array_right : np.ndarray
-            The right array to concatenate.
-        axis : int
-            The axis along which to concatenate the arrays.
-
-        Returns:
-        --------
-        (np.ndarray,)
-            A single-element tuple containing the concatenated array.
-        """
         return (np.concatenate([array_left, array_right], axis=axis),)
 
 
