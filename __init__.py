@@ -1,5 +1,5 @@
 from .basics import GetDimensions, ListSubsetNode
-from .batching import PaddedBatchImages
+from .batching import PaddedBatchImages, PaddedBatchListImages
 from .composite import NODE_CLASS_MAPPINGS as COMPOSITE_NODE_CLASS_MAPPINGS
 from .composite import (
     NODE_DISPLAY_NAME_MAPPINGS as COMPOSITE_NODE_DISPLAY_NAME_MAPPINGS,
@@ -20,6 +20,7 @@ from .masking import (
 # Register Nodes
 NODE_CLASS_MAPPINGS = {
     "PaddedBatchImages": PaddedBatchImages,
+    "PaddedBatchListImages": PaddedBatchListImages,
     "AttachMaskAsAlpha": AttachMaskAsAlphaChannel,
     "GridSampler": GridSampler,
     "GridPreview": GridPreview,
@@ -38,7 +39,8 @@ NODE_CLASS_MAPPINGS = {
 }
 # Configure Names (e.g., for Search)
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "PaddedBatchImages": "Padded Batch Images",
+    "PaddedBatchImages": "PaddedBatchImages",
+    "PaddedBatchListImages": "PaddedBatchListImages",
     "AttachMaskAsAlpha": "Mask to Alpha",
     "GridSampler": "GridSampler",
     "GridPreview": "GridPreview",

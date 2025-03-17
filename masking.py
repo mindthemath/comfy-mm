@@ -44,15 +44,14 @@ class AttachMaskAsAlphaChannel:  # custom version of JoinImageWithAlpha
             A single-element tuple containing the RGBA image: shape (B, H, W, 4).
         """
         # Ensure image has 3 channels
+        # Ensure mask has shape (B, H, W)
+        if mask.ndim != 3:
+            mask = mask.unsqueeze(0)
+        if image.ndim != 4:
+            image = image.unsqueeze(0)
         B, H, W, C = image.shape
         if C != 3:
             image = image[..., :3]
-
-        # Ensure mask has shape (B, H, W)
-        if mask.ndim != 3:
-            raise ValueError(
-                f"Mask must have 3 dimensions (B, H, W). Got {mask.shape}."
-            )
 
         # Optionally clamp alpha_value
         alpha_value = max(0.0, min(1.0, alpha_value))
