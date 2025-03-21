@@ -60,32 +60,44 @@ import torch
 
 def composite_torch(base: torch.Tensor, overlays: torch.Tensor) -> torch.Tensor:
     """
-    Composites a batch of overlays onto a single base image.
+    Composites a batch of overlays onto a single base image using alpha blending.
 
-    - base: (1, H, W, C) PyTorch tensor (assumed float in range [0,1])
-    - overlays: (B, H, W, C) PyTorch tensor (assumed float in range [0,1])
+    - base: (1, H, W, C) PyTorch tensor (float in range [0,1])
+    - overlays: (B, H, W, C) PyTorch tensor (float in range [0,1])
 
     The last overlay in the batch takes precedence in case of overlap.
 
     Returns:
         - Composite image of shape (1, H, W, C)
     """
-    if base.ndim == 4:
-        base = base.squeeze(0)  # Remove batch dimension for processing
+    assert overlays.ndim == 4, "Overlays must have shape (B, H, W, C)"
 
-    output = base.clone()  # Clone to avoid modifying input
+    if base.ndim == 3:
+        base = base.unsqueeze(0)
 
-    for i in range(overlays.shape[0]):
-        overlay = overlays[i]  # Shape (H, W, C)
-        mask = overlay.sum(dim=-1, keepdim=True) > 0  # Nonzero mask (H, W, 1)
+    if base.shape[-1] == 3:
+        base = torch.cat([base, torch.ones_like(base[..., :1])], dim=-1)
 
-        # Expand mask to (1, H, W, 1) to match base shape
-        mask = mask.unsqueeze(0)  # Add batch dimension back
+    output = base.clone().squeeze(0)  # (H, W, 4)
 
-        # Apply overlay where mask is True
-        output = torch.where(mask, overlay, output)
+    for overlay in overlays:
+        rgb_overlay = overlay[..., :3]
+        alpha_overlay = overlay[..., 3:4]
 
-    return output.unsqueeze(0)  # Restore batch dimension (1, H, W, C)
+        rgb_output = output[..., :3]
+        alpha_output = output[..., 3:4]
+
+        # Alpha compositing formula
+        alpha_comp = alpha_overlay + alpha_output * (1 - alpha_overlay)
+        rgb_comp = (
+            rgb_overlay * alpha_overlay
+            + rgb_output * alpha_output * (1 - alpha_overlay)
+        ) / torch.clamp(alpha_comp, min=1e-6)
+
+        output[..., :3] = rgb_comp
+        output[..., 3:4] = alpha_comp
+
+    return output.unsqueeze(0)
 
 
 class CompositeImage:
@@ -104,8 +116,8 @@ class CompositeImage:
 
     def composite_image(
         self, base_image: torch.Tensor, layers: torch.Tensor
-    ) -> torch.Tensor:
-        return composite_torch(base_image, layers)
+    ):
+        return (composite_torch(base_image, layers),)
 
 
 NODE_CLASS_MAPPINGS = {
