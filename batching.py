@@ -90,12 +90,13 @@ def batch_two_images(
         using 'color' as the RGB fill and 'padded_alpha' for alpha in padded regions.
     - Preserves alpha from the original images if they already had it.
     """
-    img1, img2 = pad_to_match(image_1, image_2, color, padded_alpha)
-    # Concatenate along batch dimension
-    batched = torch.cat([img1, img2], dim=0)
-    # If alpha is 1.0, remove it for a 3-channel image
-    if padded_alpha == 1.0:
-        batched = batched[..., :3]
+    with torch.no_grad():
+        img1, img2 = pad_to_match(image_1, image_2, color, padded_alpha)
+        # Concatenate along batch dimension
+        batched = torch.cat([img1, img2], dim=0)
+        # If alpha is 1.0, remove it for a 3-channel image
+        if padded_alpha == 1.0:
+            batched = batched[..., :3]
     return batched
 
 
@@ -105,9 +106,10 @@ def batch_list_of_images(
     padded_alpha: float = 1.0,
 ):
     """ """
-    first_image = image_list[0]
-    for image in image_list[1:]:
-        first_image = batch_two_images(first_image, image, color, padded_alpha)
+    with torch.no_grad():
+        first_image = image_list[0]
+        for image in image_list[1:]:
+            first_image = batch_two_images(first_image, image, color, padded_alpha)
     return first_image
 
 
