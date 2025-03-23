@@ -114,9 +114,7 @@ class CompositeImage:
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "composite_image"
 
-    def composite_image(
-        self, base_image: torch.Tensor, layers: torch.Tensor
-    ):
+    def composite_image(self, base_image: torch.Tensor, layers: torch.Tensor):
         return (composite_torch(base_image, layers),)
 
 
