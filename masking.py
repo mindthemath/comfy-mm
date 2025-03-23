@@ -13,7 +13,11 @@ class AttachMaskAsAlphaChannel:  # custom version of JoinImageWithAlpha
                 "mask": ("MASK", {}),
             },
             "optional": {
-                "alpha_value": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0})
+                "alpha_value": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0}),
+                "device": (
+                    ["auto", "cpu", "cuda", "mps"],
+                    {},
+                ),  # "auto" or "cuda" or "cpu" or "mps"
             },
         }
 
@@ -23,7 +27,11 @@ class AttachMaskAsAlphaChannel:  # custom version of JoinImageWithAlpha
     CATEGORY = "image"
 
     def attach_mask(
-        self, image: torch.Tensor, mask: torch.Tensor, alpha_value: float = 0.0
+        self,
+        image: torch.Tensor,
+        mask: torch.Tensor,
+        alpha_value: float = 0.0,
+        device: str = "auto",
     ):
         """
         Converts a 3-channel (RGB) image into a 4-channel (RGBA) image by attaching
@@ -43,30 +51,43 @@ class AttachMaskAsAlphaChannel:  # custom version of JoinImageWithAlpha
         (torch.Tensor,)
             A single-element tuple containing the RGBA image: shape (B, H, W, 4).
         """
-        # Ensure image has 3 channels
-        # Ensure mask has shape (B, H, W)
-        if mask.ndim != 3:
-            mask = mask.unsqueeze(0)
-        if image.ndim != 4:
-            image = image.unsqueeze(0)
-        B, H, W, C = image.shape
-        if C != 3:
-            image = image[..., :3]
+        if device == "auto":
+            torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            torch_device = torch.device(device)
+        # if device != "cpu":
+        image = image.to(torch_device, dtype=torch.float16)
+        mask = mask.to(torch_device, dtype=torch.uint8)
 
-        # Optionally clamp alpha_value
-        alpha_value = max(0.0, min(1.0, alpha_value))
+        with torch.no_grad():
+            # Ensure image has 3 channels
+            # Ensure mask has shape (B, H, W)
+            if mask.ndim != 3:
+                mask = mask.unsqueeze(0)
+            if image.ndim != 4:
+                image = image.unsqueeze(0)
+            B, H, W, C = image.shape
+            if C != 3:
+                image = image[..., :3]
 
-        # Scale the mask by alpha_value
-        # mask shape: (B, H, W) -> expand to (B, H, W, 1) for concatenation
-        # grab black region of mask as content to keep.
-        alpha_channel = (1 - mask).unsqueeze(-1)
-        # optionally blend in masked region
-        if alpha_value > 0.0:
-            alpha_channel += (alpha_value * mask).unsqueeze(-1)
+            # Optionally clamp alpha_value
+            alpha_value = max(0.0, min(1.0, alpha_value))
+            # alpha_value: int = int(alpha_value * 255)
+            # Scale the mask by alpha_value
+            # mask shape: (B, H, W) -> expand to (B, H, W, 1) for concatenation
+            # grab black region of mask as content to keep.
+            alpha_channel = (torch.tensor(1) - mask).unsqueeze(-1)
+            # optionally blend in masked region
+            if alpha_value > 0.0:
+                alpha_channel += (alpha_value * mask).unsqueeze(-1)
 
-        # Concatenate the alpha channel to create RGBA
-        rgba_image = torch.cat([image, alpha_channel], dim=-1)  # (B, H, W, 4)
-
+            # Concatenate the alpha channel to create RGBA
+            # RuntimeError: Promotion for uint16, uint32, uint64 types is not supported, attempted to promote UInt16 and Byte
+            alpha_channel = alpha_channel.to(torch.uint16)
+            rgba_image = torch.cat([image, alpha_channel], dim=-1)  # (B, H, W, 4)
+        del alpha_channel, mask
+        # torch.cuda.empty_cache()
+        # rgba_image = rgba_image.detach().cpu()
         return (rgba_image,)
 
 
