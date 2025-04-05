@@ -82,6 +82,11 @@ def composite_torch(base: torch.Tensor, overlays: torch.Tensor) -> torch.Tensor:
 
     for overlay in overlays:
         rgb_overlay = overlay[..., :3]
+        if overlay.shape[-1] == 3:
+            overlay = torch.cat([overlay, torch.ones_like(overlay[..., :1])], dim=-1)
+        # Ensure overlay has an alpha channel
+        if overlay.shape[-1] != 4:
+            raise ValueError("Overlay must have 4 channels (RGBA)")
         alpha_overlay = overlay[..., 3:4]
 
         rgb_output = output[..., :3]
