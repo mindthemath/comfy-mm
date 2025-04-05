@@ -10,7 +10,11 @@ class GridSampler:
                 "image": ("IMAGE",),
                 "grid_x": ("INT", {"default": 8, "min": 1, "max": 256, "step": 1}),
                 "grid_y": ("INT", {"default": 8, "min": 1, "max": 256, "step": 1}),
-            }
+            },
+            "optional": {
+                "shuffle": ("BOOLEAN", {"default": False}),
+                "seed": ("INT", {"default": 1992, "min": 0}),
+            },
         }
 
     RETURN_TYPES = ("GRID_DATA", "FLOAT")
@@ -18,7 +22,7 @@ class GridSampler:
     CATEGORY = "image"
     FUNCTION = "sample_grid"
 
-    def sample_grid(self, image, grid_x, grid_y):
+    def sample_grid(self, image, grid_x, grid_y, shuffle=False, seed=21):
         # Convert tensor to numpy array
         img = image[0].cpu().numpy()
         img_height, img_width = img.shape[:2]
@@ -53,7 +57,11 @@ class GridSampler:
                     [center_x, center_y, avg_rgb[0], avg_rgb[1], avg_rgb[2]]
                 )
 
-        return (np.array(grid_points), aspect_ratio)
+        idx = np.arange(len(grid_points))
+        if shuffle:
+            np.random.seed(seed)
+            np.random.shuffle(idx)
+        return (np.array(grid_points)[idx], aspect_ratio)
 
 
 class GridPreview:
