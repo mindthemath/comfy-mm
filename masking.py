@@ -57,7 +57,7 @@ class AttachMaskAsAlphaChannel:  # custom version of JoinImageWithAlpha
             torch_device = torch.device(device)
         # if device != "cpu":
         image = image.to(torch_device, dtype=torch.float16)
-        mask = mask.to(torch_device, dtype=torch.uint8)
+        mask = (mask).to(torch_device, dtype=torch.float16)
 
         with torch.no_grad():
             # Ensure image has 3 channels
@@ -83,7 +83,7 @@ class AttachMaskAsAlphaChannel:  # custom version of JoinImageWithAlpha
 
             # Concatenate the alpha channel to create RGBA
             # RuntimeError: Promotion for uint16, uint32, uint64 types is not supported, attempted to promote UInt16 and Byte
-            alpha_channel = alpha_channel.to(torch.uint16)
+            alpha_channel = alpha_channel.to(torch.float16)
             rgba_image = torch.cat([image, alpha_channel], dim=-1)  # (B, H, W, 4)
         del alpha_channel, mask
         # torch.cuda.empty_cache()
